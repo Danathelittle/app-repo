@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  lint-test:
+  lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -19,7 +19,7 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
   build-push:
-    needs: lint-test
+    needs: lint
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -34,11 +34,11 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
     - name: Build and Push
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/devops-auto-app:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/devops-auto-app:$IMAGE_TAG
+        docker build -t $ECR_REGISTRY/automation/sample-project:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/automation/sample-project:$IMAGE_TAG
 
   update-manifest:
     needs: build-push
@@ -51,9 +51,9 @@ jobs:
         token: ${{ secrets.PAT_TOKEN }}
     - name: Update K8s Image Tag
       run: |
-        sed -i 's|image: .*|image: ${{ secrets.ECR_REGISTRY }}/devops-auto-app:${{ github.sha }}|g' k8s/deployment.yml
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        sed -i "s|image: .*|image: ${{ secrets.ECR_REGISTRY }}/automation/sample-project:${{ github.sha }}|g" k8s/deployment.yml
         git add k8s/deployment.yml
         git commit -m "image update: bump version to ${{ github.sha }}"
         git push origin main
