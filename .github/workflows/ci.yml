@@ -47,7 +47,7 @@ jobs:
     - name: Checkout Manifest Repo
       uses: actions/checkout@v4
       with:
-        repository: 'your-github-username/manifest-repo'
+        repository: 'git@github.com:Danathelittle/manifest-repo.git'
         token: ${{ secrets.PAT_TOKEN }}
     - name: Update K8s Image Tag
       run: |
